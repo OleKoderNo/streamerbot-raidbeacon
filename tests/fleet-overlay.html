@@ -2,13 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>RaidBeacon - Pirate Fleet Check</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>RaidBeacon — Pirate Fleet Check</title>
+
     <link rel="stylesheet" href="./fleet-overlay.css" />
     <script src="./fleet-overlay.js" defer></script>
   </head>
+
   <body>
     <canvas id="fleet" aria-hidden="true"></canvas>
+
+    <section id="raid-alert" aria-labelledby="raid-heading" hidden>
+      <h1 id="raid-heading"></h1>
+      <p id="raid-message"></p>
+    </section>
+
     <p id="error" role="alert" hidden></p>
   </body>
 </html>

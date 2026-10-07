@@ -85,6 +85,50 @@ Test code: `tests/FleetOverlayCheck.cs`
 Actual incoming Twitch raid verification remains pending.
 Overlapping alerts and replay protection are not implemented yet.
 
+## Fleet integration checkpoint — 2026-10-07
+
+Status: Passed manual testing in Streamer.bot and OBS.
+
+- C# successfully starts the fleet overlay.
+- Each viewer produces five ships.
+- Each ship fires two shots.
+- Ships travel from left to right.
+- The ocean and effects clear after playback.
+- Repeated tests start a fresh fleet.
+- Invalid zero-viewer input is rejected.
+
+Assets are stored in `assets/visuals/ships/`.
+The test action is `RaidBeacon - Fleet Check`.
+
+## Configurable raid messages — 2026-10-07
+
+Status: Implementation provided; runtime verification pending.
+
+### Changes
+
+- Added an upright HTML message panel above the rotated canvas.
+- Added configurable heading and message templates to the C# action.
+- Added placeholders for display name, viewer count and singular/plural wording.
+- Encoded messages before passing them through URL parameters.
+- Used `textContent` to display received values as plain text.
+- Added message cleanup after playback and during error handling.
+
+### Manual verification
+
+- [ ] One viewer displays “1 raider” alongside five ships.
+- [ ] Twelve viewers display “12 raiders” alongside sixty ships.
+- [ ] Accented characters and ampersands display correctly.
+- [ ] The message remains upright.
+- [ ] The message and ocean disappear after the sequence finishes.
+- [ ] Repeating the action starts a fresh fleet and message.
+
+### Remaining work
+
+- Verify an actual incoming Twitch raid.
+- Add chat messages and native Twitch shoutouts.
+- Add sound and optional shader effects.
+- Handle overlapping raids and unwanted replay after source reloads.
+
 ## Your visual checks
 
 1. Test 1 viewer: five ships, each fires once from each side; ten visible impacts in total.

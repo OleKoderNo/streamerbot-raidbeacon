@@ -30,6 +30,9 @@ if (parameters.has("shipsPerViewer")) {
 const canvas = document.getElementById("fleet");
 const ctx = canvas.getContext("2d");
 const errorBox = document.getElementById("error");
+const raidAlert = document.getElementById("raid-alert");
+const raidHeading = document.getElementById("raid-heading");
+const raidMessage = document.getElementById("raid-message");
 
 let ships = [],
   projectiles = [],
@@ -48,6 +51,31 @@ let art;
 const totalShips = settings.testViewers * settings.shipsPerViewer;
 const random = (min, max) => min + Math.random() * (max - min);
 
+/**
+ * Displays the plain-text messages supplied by C#.
+ */
+function showRaidText() {
+  const heading = parameters.get("heading");
+  const message = parameters.get("message");
+
+  if (!heading?.trim() || !message?.trim()) {
+    throw new Error("Missing raid heading or message.");
+  }
+
+  raidHeading.textContent = heading;
+  raidMessage.textContent = message;
+  raidAlert.hidden = false;
+}
+
+/**
+ * Hides the message when playback finishes or fails.
+ */
+function hideRaidText() {
+  raidAlert.hidden = true;
+  raidHeading.textContent = "";
+  raidMessage.textContent = "";
+}
+
 function resize() {
   canvas.width = window.innerHeight;
   canvas.height = window.innerWidth;
@@ -56,6 +84,8 @@ function resize() {
 }
 
 function reportError(error) {
+  hideRaidText();
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   errorBox.hidden = false;
   errorBox.textContent = "RaidBeacon: " + error.message;
@@ -305,6 +335,7 @@ function animate(now) {
     requestAnimationFrame(animate);
   } else {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hideRaidText();
     console.info(
       `[RaidBeacon] COMPLETE ships=${exited}/${totalShips} shots=${shots}/${totalShips * 2} impacts=${hits}/${totalShips * 2}`,
     );
@@ -326,6 +357,7 @@ async function start() {
       loadImage("impact.png", 1280, 320),
     ]);
     art = { ship, cannon, impact };
+    showRaidText();
     console.info(
       `[RaidBeacon] START viewers=${settings.testViewers} ships=${totalShips} shots=${totalShips * 2}`,
     );

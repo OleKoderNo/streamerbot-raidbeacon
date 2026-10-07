@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Text.RegularExpressions;
 
 public class CPHInline
 {
@@ -9,36 +10,58 @@ public class CPHInline
     private const string SceneName = "RaidBeacon";
     private const string BrowserSourceName = "RaidBeacon Fleet";
 
-    // Replace this with your actual project path.
+    // Keep the actual path from your working version.
     private const string OverlayFile =
         @"C:\YOUR_PROJECTS\streamerbot-raidbeacon\tests\fleet-overlay.html";
 
     private const int ShipsPerViewer = 5;
 
-    // Keep true while testing manually.
+    // Supported placeholders:
+    // {displayName}, {viewers}, {viewerLabel}
+    private const string HeadingTemplate = "BOARDING PARTY!";
+
+    private const string MessageTemplate =
+        "{displayName} arrived with {viewers} {viewerLabel}!";
+
+    private const string SingularViewerLabel = "raider";
+    private const string PluralViewerLabel = "raiders";
+
+    // DEVELOPMENT TEST DATA
     private const bool UseTestData = true;
     private const int TestViewerCount = 1;
+    private const string TestDisplayName = "ExampleRaider";
 
-    // EXECUTION
     public bool Execute()
     {
-        CPH.LogInfo("[RaidBeacon] Starting fleet overlay check.");
+        CPH.LogInfo("[RaidBeacon] Starting fleet and message check.");
 
         try
         {
             int viewers;
+            string displayName;
 
             if (UseTestData)
             {
                 viewers = TestViewerCount;
+                displayName = TestDisplayName;
             }
-            else if (!CPH.TryGetArg<int>("viewers", out viewers))
+            else
             {
-                CPH.LogError(
-                    "[RaidBeacon] Missing or invalid viewers argument."
-                );
+                if (!CPH.TryGetArg<int>("viewers", out viewers))
+                {
+                    CPH.LogError(
+                        "[RaidBeacon] Missing or invalid viewers argument."
+                    );
 
-                return false;
+                    return false;
+                }
+
+                // Prefer the display name; fall back to the login.
+                if (!CPH.TryGetArg<string>("user", out displayName) ||
+                    string.IsNullOrWhiteSpace(displayName))
+                {
+                    CPH.TryGetArg<string>("userName", out displayName);
+                }
             }
 
             if (viewers < 1 || ShipsPerViewer < 1)
@@ -51,16 +74,24 @@ public class CPHInline
                 return false;
             }
 
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                CPH.LogError("[RaidBeacon] Missing raider name.");
+                return false;
+            }
+
+            // Preserve international characters, removing control characters.
+            displayName = Regex.Replace(
+                displayName.Trim(),
+                @"[\p{Cc}\p{Zl}\p{Zp}]",
+                " "
+            );
+
             long totalShips = (long)viewers * ShipsPerViewer;
 
-            // The renderer also counts two shots per ship.
-            // Keep both counts within JavaScript's safe integer range.
             if (totalShips > 9007199254740991L / 2)
             {
-                CPH.LogError(
-                    "[RaidBeacon] Ship and shot counts are too large."
-                );
-
+                CPH.LogError("[RaidBeacon] Ship and shot counts are too large.");
                 return false;
             }
 
@@ -75,13 +106,29 @@ public class CPHInline
                 return false;
             }
 
+            string heading = FormatText(
+                HeadingTemplate,
+                displayName,
+                viewers
+            );
+
+            string message = FormatText(
+                MessageTemplate,
+                displayName,
+                viewers
+            );
+
             if (!CPH.ObsIsConnected(ObsConnection))
             {
                 CPH.LogError("[RaidBeacon] OBS is not connected.");
                 return false;
             }
 
-            string overlayUrl = BuildOverlayUrl(viewers);
+            string overlayUrl = BuildOverlayUrl(
+                viewers,
+                heading,
+                message
+            );
 
             CPH.ObsSetBrowserSource(
                 SceneName,
@@ -97,24 +144,17 @@ public class CPHInline
                 ObsConnection
             );
 
-            CPH.LogInfo(
-                "[RaidBeacon] Mode: " +
-                (UseTestData ? "TEST" : "RAID ARGUMENTS")
-            );
+            CPH.LogInfo("[RaidBeacon] Heading: " + heading);
+            CPH.LogInfo("[RaidBeacon] Message: " + message);
 
             CPH.LogInfo(
-                "[RaidBeacon] Requested fleet: " +
-                viewers.ToString(CultureInfo.InvariantCulture) +
-                " viewers, " +
-                totalShips.ToString(CultureInfo.InvariantCulture) +
-                " ships, " +
-                (totalShips * 2).ToString(CultureInfo.InvariantCulture) +
-                " shots."
+                "[RaidBeacon] Ships requested: " +
+                totalShips.ToString(CultureInfo.InvariantCulture)
             );
 
             CPH.LogInfo(
                 "[RaidBeacon] Playback requested. " +
-                "Confirm the animation and cleanup in OBS."
+                "Confirm the fleet, text and cleanup in OBS."
             );
 
             return true;
@@ -130,19 +170,64 @@ public class CPHInline
     }
 
     /// <summary>
-    /// Builds a local-file URL containing the fleet settings.
-    /// A unique run ID allows repeated tests with identical counts.
+    /// Expands supported placeholders without interpreting inserted values.
     /// </summary>
-    private string BuildOverlayUrl(int viewers)
+    private string FormatText(
+        string template,
+        string displayName,
+        int viewers
+    )
     {
-        string fullPath = Path.GetFullPath(OverlayFile);
-        string fileUrl = new Uri(fullPath).AbsoluteUri;
+        if (string.IsNullOrWhiteSpace(template))
+        {
+            throw new ArgumentException("Text templates must not be blank.");
+        }
+
+        return Regex.Replace(template, @"\{([^{}]+)\}", match =>
+        {
+            switch (match.Groups[1].Value)
+            {
+                case "displayName":
+                    return displayName;
+
+                case "viewers":
+                    return viewers.ToString(CultureInfo.InvariantCulture);
+
+                case "viewerLabel":
+                    return viewers == 1
+                        ? SingularViewerLabel
+                        : PluralViewerLabel;
+
+                default:
+                    throw new ArgumentException(
+                        "Unknown placeholder: " + match.Value
+                    );
+            }
+        });
+    }
+
+    /// <summary>
+    /// Encodes the messages so punctuation cannot alter the URL parameters.
+    /// </summary>
+    private string BuildOverlayUrl(
+        int viewers,
+        string heading,
+        string message
+    )
+    {
+        string fileUrl = new Uri(
+            Path.GetFullPath(OverlayFile)
+        ).AbsoluteUri;
 
         return fileUrl +
             "?viewers=" +
             viewers.ToString(CultureInfo.InvariantCulture) +
             "&shipsPerViewer=" +
             ShipsPerViewer.ToString(CultureInfo.InvariantCulture) +
+            "&heading=" +
+            Uri.EscapeDataString(heading) +
+            "&message=" +
+            Uri.EscapeDataString(message) +
             "&run=" +
             Guid.NewGuid().ToString("N");
     }
