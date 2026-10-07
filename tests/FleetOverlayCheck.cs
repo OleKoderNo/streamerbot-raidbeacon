@@ -14,6 +14,16 @@ public class CPHInline
     private const string OverlayFile =
         @"C:\YOUR_PROJECTS\streamerbot-raidbeacon\tests\fleet-overlay.html";
 
+    // ARRIVAL SOUND
+    private const bool EnableArrivalSound = true;
+
+    private const string ArrivalSoundFile =
+        @"C:\YOUR-PATH\streamerbot-raidbeacon\assets\audio\cannon_fire.ogg";
+
+    private const float ArrivalSoundVolume = 0.25f;
+
+    private const string ArrivalSoundName = "RaidBeacon Arrival";
+
     private const int ShipsPerViewer = 5;
 
     // Supported placeholders:
@@ -144,6 +154,8 @@ public class CPHInline
                 ObsConnection
             );
 
+            PlayArrivalSound();
+
             CPH.LogInfo("[RaidBeacon] Heading: " + heading);
             CPH.LogInfo("[RaidBeacon] Message: " + message);
 
@@ -167,6 +179,8 @@ public class CPHInline
 
             return false;
         }
+
+
     }
 
     /// <summary>
@@ -204,6 +218,64 @@ public class CPHInline
                     );
             }
         });
+    }
+
+    private void PlayArrivalSound()
+    {
+        if (!EnableArrivalSound)
+        {
+            CPH.LogInfo("[RaidBeacon] Arrival sound disabled.");
+            return;
+        }
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(ArrivalSoundFile) ||
+                !Path.IsPathRooted(ArrivalSoundFile))
+            {
+                throw new ArgumentException(
+                    "ArrivalSoundFile must be a full absolute file path.");
+            }
+
+            if (!File.Exists(ArrivalSoundFile))
+            {
+                throw new FileNotFoundException(
+                    "Arrival sound file was not found.",
+                    ArrivalSoundFile);
+            }
+
+            if (float.IsNaN(ArrivalSoundVolume) ||
+                float.IsInfinity(ArrivalSoundVolume) ||
+                ArrivalSoundVolume < 0f ||
+                ArrivalSoundVolume > 1f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    "ArrivalSoundVolume",
+                    "ArrivalSoundVolume must be between 0.0 and 1.0.");
+            }
+
+            if (string.IsNullOrWhiteSpace(ArrivalSoundName))
+            {
+                throw new ArgumentException(
+                    "ArrivalSoundName must not be blank.");
+            }
+
+            CPH.PlaySound(
+                ArrivalSoundFile,
+                ArrivalSoundVolume,
+                false,
+                ArrivalSoundName,
+                false);
+
+            CPH.LogInfo("[RaidBeacon] Arrival sound playback requested.");
+        }
+        catch (Exception exception)
+        {
+            // An optional audio failure should not interrupt the fleet.
+            CPH.LogError(
+                "[RaidBeacon] Arrival sound failed; fleet continues: " +
+                exception.Message);
+        }
     }
 
     /// <summary>

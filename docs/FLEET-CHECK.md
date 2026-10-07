@@ -115,12 +115,12 @@ Status: Implementation provided; runtime verification pending.
 
 ### Manual verification
 
-- [ ] One viewer displays “1 raider” alongside five ships.
-- [ ] Twelve viewers display “12 raiders” alongside sixty ships.
-- [ ] Accented characters and ampersands display correctly.
-- [ ] The message remains upright.
-- [ ] The message and ocean disappear after the sequence finishes.
-- [ ] Repeating the action starts a fresh fleet and message.
+- [x] One viewer displays “1 raider” alongside five ships.
+- [x] Twelve viewers display “12 raiders” alongside sixty ships.
+- [x] Accented characters and ampersands display correctly.
+- [x] The message remains upright.
+- [x] The message and ocean disappear after the sequence finishes.
+- [x] Repeating the action starts a fresh fleet and message.
 
 ### Remaining work
 
@@ -128,6 +128,23 @@ Status: Implementation provided; runtime verification pending.
 - Add chat messages and native Twitch shoutouts.
 - Add sound and optional shader effects.
 - Handle overlapping raids and unwanted replay after source reloads.
+
+### Arrival sound integration
+
+Standalone sound playback: confirmed working.
+
+The fleet action requests one arrival sound per alert.
+Sound playback does not wait for completion.
+Audio errors are logged without interrupting the visual alert.
+
+- [x] One viewer produces five ships and one arrival sound.
+- [x] Twelve viewers produce sixty ships and one arrival sound.
+- [x] Disabling audio preserves the visual alert.
+- [x] A missing audio file preserves the visual alert and logs an error.
+- [x] Another run works after the previous fleet finishes.
+- [x] Both the overlay and sound are captured in an OBS recording.
+
+Live Twitch shoutout verification remains pending.
 
 ## Your visual checks
 
