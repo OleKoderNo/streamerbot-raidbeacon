@@ -40,3 +40,17 @@ These credits apply to the third-party artwork. They do not define
 the license for RaidBeacon's own source code.
 
 Please consider supporting the original creators through their asset pages.
+
+### Cannon sound
+
+RaidBeacon uses **Cannon fire** by **Thimras**, published on OpenGameArt.org.
+
+- Original file: `cannon_fire.ogg`
+- Project location: `assets/audio/cannon_fire.ogg`
+- Source: https://opengameart.org/content/cannon-fire
+- License: CC0 1.0 Universal
+- License details: https://creativecommons.org/publicdomain/zero/1.0/
+
+Attribution is provided voluntarily to acknowledge the creator.
+The audio asset retains its CC0 dedication independently of
+RaidBeacon's source-code license.
