@@ -23,18 +23,18 @@ The original ship faces down, so the fleet sails from top to bottom. Speeds and 
 
 ## Settings at the top of fleet-overlay.js
 
-| Setting | Meaning |
-| --- | --- |
-| testViewers | Simulated raid count; positive integer |
-| shipsPerViewer | Default 5; positive integer |
-| waterColor | `#1C85D9`, sampled from the source artwork |
-| assetFolder | Relative asset directory, resolved from HTML location |
-| shipsPerSecond | Rate of introducing ships |
-| maxActiveShips | Concurrent ship limit; waiting ships are preserved |
-| shipWidth | Approximate ship width in canvas pixels before random variation |
-| minSpeed / maxSpeed | Vertical travel speed in pixels per second |
-| cannonSize | Rendered square size of each cannon frame |
-| impactSize | Rendered square size of each impact frame |
+| Setting             | Meaning                                                         |
+| ------------------- | --------------------------------------------------------------- |
+| testViewers         | Simulated raid count; positive integer                          |
+| shipsPerViewer      | Default 5; positive integer                                     |
+| waterColor          | `#1C85D9`, sampled from the source artwork                      |
+| assetFolder         | Relative asset directory, resolved from HTML location           |
+| shipsPerSecond      | Rate of introducing ships                                       |
+| maxActiveShips      | Concurrent ship limit; waiting ships are preserved              |
+| shipWidth           | Approximate ship width in canvas pixels before random variation |
+| minSpeed / maxSpeed | Vertical travel speed in pixels per second                      |
+| cannonSize          | Rendered square size of each cannon frame                       |
+| impactSize          | Rendered square size of each impact frame                       |
 
 The animation uses simulation time with a capped delta. If rendering stalls it slows rather than skipping ships/shots. Later C# will own user-facing raid configuration and pass validated values to the renderer.
 
@@ -65,6 +65,25 @@ No new artwork was generated. The bundled PNGs are deterministic extracts:
 - PENDING: visual playback in a real browser and OBS; frame rate and composition are not verified by the headless harness.
 
 Run logic checks with `node tests/fleet-count-check.cjs` from the repository root. This harness stubs image loading and drawing; it checks lifecycle counts and error paths, not pixels.
+
+## Streamer.bot and OBS integration — 2026-10-07
+
+Passed manual checks:
+
+- C# starts the fleet through the OBS Browser Source.
+- One viewer produces five ships and ten shots.
+- Ships travel from left to right.
+- The ocean and effects clear after playback.
+- Repeating the same test starts a fresh fleet.
+- Twelve viewers produce sixty ships.
+- A zero-viewer input is rejected.
+
+Asset location: `assets/visuals/ships/`
+Test action: `RaidBeacon - Fleet Check`
+Test code: `tests/FleetOverlayCheck.cs`
+
+Actual incoming Twitch raid verification remains pending.
+Overlapping alerts and replay protection are not implemented yet.
 
 ## Your visual checks
 
