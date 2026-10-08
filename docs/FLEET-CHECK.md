@@ -314,10 +314,14 @@ Normal error handling and startup/completion logging remain.
 - [x] Browser diagnostics confirmed loaded audio and successful playback starts.
 - [x] Local audibility was resolved through OBS audio monitoring.
 - [x] Clean files without the diagnostic panel were confirmed working.
+- [x] Twelve-viewer fleet completes with effect audio enabled.
+- [x] Multiple queued alerts complete without audio carrying over.
+- [x] A missing cannon_miss.ogg does not prevent fleet completion.
 - [ ] Cannon and splash effects verified in a local OBS recording.
-- [ ] Larger fleet audio limits checked.
-- [ ] Missing audio file checked without preventing fleet completion.
-- [ ] Two queued alerts checked with synchronized effects enabled.
+
+Renaming the audio file during playback also allowed completion.
+This does not prove missing-file handling because audio may already
+be loaded in browser memory.
 
 Live Twitch shoutout verification remains pending.
 
