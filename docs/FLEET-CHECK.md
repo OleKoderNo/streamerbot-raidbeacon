@@ -146,6 +146,41 @@ Audio errors are logged without interrupting the visual alert.
 
 Live Twitch shoutout verification remains pending.
 
+### Completion tracking and queueing
+
+The fleet action waits for overlay status reports through the
+Streamer.bot WebSocket server.
+
+Alerts use the blocking `RaidBeacon Alerts` queue.
+Status reports use the separate blocking `RaidBeacon Signals` queue.
+
+Each execution has a unique run ID and temporary state.
+Inactive run reports are ignored.
+The arrival sound is requested after the overlay reports startup.
+The browser source is reset to `about:blank` after completion or failure.
+
+Recovery settings:
+
+- Startup timeout: 20 seconds.
+- Playback timeout: 1800 seconds.
+- Status polling interval: 100 milliseconds.
+
+The playback timeout is an emergency limit and can interrupt a fleet
+that exceeds it.
+
+### Verification — 2026-10-08
+
+- [x] Both C# actions compile and execute.
+- [x] One alert reports startup and completion.
+- [x] Two overlapping requests execute sequentially with different run IDs.
+- [x] Arrival sound playback is requested once per successful alert.
+- [x] An unavailable WebSocket server triggers the startup timeout.
+- [x] Missing assets report failure and release the queue.
+- [x] Failed startup does not request arrival audio.
+- [x] Playback completes after restoring the server and assets.
+
+Live Twitch shoutout verification remains pending.
+
 ## Your visual checks
 
 1. Test 1 viewer: five ships, each fires once from each side; ten visible impacts in total.

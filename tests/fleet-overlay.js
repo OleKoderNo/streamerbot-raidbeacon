@@ -1,6 +1,6 @@
 "use strict";
 
-// DEVELOPMENT SETTINGS. C# integration comes after this visual check passes.
+// VISUAL SETTINGS. Raid data is supplied by C# through the URL.
 const settings = {
   testViewers: 12,
   shipsPerViewer: 5,
@@ -46,7 +46,10 @@ let spawned = 0,
 let budget = 0,
   previousTime = null,
   elapsed = 0;
+
 let art;
+
+let stopped = false;
 
 const totalShips = settings.testViewers * settings.shipsPerViewer;
 const random = (min, max) => min + Math.random() * (max - min);
@@ -84,12 +87,28 @@ function resize() {
 }
 
 function reportError(error) {
-  hideRaidText();
+  if (stopped) return;
+  stopped = true;
 
+  hideRaidText();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const message = error instanceof Error ? error.message : String(error);
+
   errorBox.hidden = false;
-  errorBox.textContent = "RaidBeacon: " + error.message;
+  errorBox.textContent = "RaidBeacon: " + message;
   console.error(error);
+
+  if (window.raidBeaconSignals) {
+    void window.raidBeaconSignals
+      .send("failed", message)
+      .catch((signalError) => {
+        console.error(
+          "[RaidBeacon] Failure report was not delivered.",
+          signalError,
+        );
+      });
+  }
 }
 
 function loadImage(file, width, height) {
@@ -305,6 +324,19 @@ function draw() {
   }
 }
 
+/**
+ * Catches failures occurring during an animation frame.
+ */
+function renderFrame(now) {
+  if (stopped) return;
+
+  try {
+    animate(now);
+  } catch (error) {
+    reportError(error);
+  }
+}
+
 function animate(now) {
   if (previousTime === null) previousTime = now;
   const dt = Math.min((now - previousTime) / 1000, 0.1);
@@ -332,36 +364,60 @@ function animate(now) {
     projectiles.length ||
     impacts.length
   ) {
-    requestAnimationFrame(animate);
+    requestAnimationFrame(renderFrame);
   } else {
+    if (
+      exited !== totalShips ||
+      shots !== totalShips * 2 ||
+      hits !== totalShips * 2
+    ) {
+      throw new Error("Fleet completed with unexpected ship or effect counts.");
+    }
+
+    stopped = true;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     hideRaidText();
+
     console.info(
       `[RaidBeacon] COMPLETE ships=${exited}/${totalShips} shots=${shots}/${totalShips * 2} impacts=${hits}/${totalShips * 2}`,
     );
+
+    void window.raidBeaconSignals.send("complete").catch((error) => {
+      // The visuals have finished. C# will recover through its timeout
+      // if this completion report cannot be delivered.
+      console.error("[RaidBeacon] Completion report was not delivered.", error);
+    });
   }
 }
 
 async function start() {
-  // Stay transparent until an explicit test or raid requests playback.
-  if (!shouldPlay) {
-    return;
-  }
+  if (!shouldPlay) return;
 
   try {
     validate();
     resize();
+
+    if (!window.raidBeaconSignals) {
+      throw new Error("Missing overlay-signals.js.");
+    }
+
     const [ship, cannon, impact] = await Promise.all([
       loadImage("ship.png", 144, 256),
       loadImage("cannon.png", 480, 160),
       loadImage("impact.png", 1280, 320),
     ]);
+
     art = { ship, cannon, impact };
     showRaidText();
+
+    // Report readiness only after assets and text are ready.
+    await window.raidBeaconSignals.send("started");
+
     console.info(
       `[RaidBeacon] START viewers=${settings.testViewers} ships=${totalShips} shots=${totalShips * 2}`,
     );
-    requestAnimationFrame(animate);
+
+    requestAnimationFrame(renderFrame);
   } catch (error) {
     reportError(error);
   }
