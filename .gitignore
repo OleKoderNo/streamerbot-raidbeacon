@@ -1,1 +1,3 @@
+# Local Streamer.bot connection settings; may contain credentials.
 /tests/raidbeacon.local.js
+/overlay/raidbeacon.local.js
