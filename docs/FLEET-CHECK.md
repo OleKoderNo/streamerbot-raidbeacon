@@ -181,6 +181,146 @@ that exceeds it.
 
 Live Twitch shoutout verification remains pending.
 
+### Animation sound effects
+
+C# supplies effect enablement, volume, concurrency, and spacing settings.
+The browser overlay requests cannon and splash audio at animation events.
+
+The simultaneous-playback limit applies across both effect types.
+Sounds exceeding the limit or minimum spacing are skipped, not queued.
+All ships and visual effects continue regardless of skipped sounds.
+Missing audio disables the affected sound without stopping the fleet.
+Remaining audio tails stop when the fleet finishes or fails.
+
+Verification:
+
+- [ ] Cannon audio accompanies firing.
+- [ ] Splash audio accompanies impacts.
+- [ ] Effects are audible in an OBS recording.
+- [ ] Larger fleets complete with bounded audio concurrency.
+- [ ] Disabling effects preserves the arrival sound and visuals.
+- [ ] A missing splash file does not prevent completion.
+- [ ] Two queued alerts complete without leftover effect audio.
+
+## Synchronized audio — 2026-10-08
+
+### Implemented behaviour
+
+- Cannon sounds are requested when ships fire.
+- Splash sounds are requested when cannonballs hit the water.
+- C# supplies effect enablement, volume, concurrency, and spacing settings.
+- The browser overlay plays the animation effects.
+- Streamer.bot plays the separate arrival sound.
+- Sounds exceeding the concurrency or spacing limits are skipped.
+  Ships, cannonballs, and visual impacts are not skipped.
+- Remaining effect audio stops when the fleet completes or fails.
+
+### Configuration
+
+Change these values near the top of `tests/FleetOverlayCheck.cs`:
+
+| Setting              | Default | Purpose                                         |
+| -------------------- | ------- | ----------------------------------------------- |
+| `EnableArrivalSound` | `true`  | Play one arrival sound through Streamer.bot     |
+| `EnableEffectSounds` | `true`  | Enable browser cannon and splash audio          |
+| `CannonVolume`       | `0.12`  | Cannon volume, from 0.0 to 1.0                  |
+| `SplashVolume`       | `0.10`  | Splash volume, from 0.0 to 1.0                  |
+| `MaxEffectSounds`    | `6`     | Maximum simultaneous browser effect sounds      |
+| `EffectGapMs`        | `100`   | Minimum spacing between sounds of the same type |
+
+The browser sound limit does not include the separate arrival sound.
+
+After changing C#, update the Execute C# Code sub-action in Streamer.bot,
+compile, and save. Editing the project file alone does not update code
+previously pasted into Streamer.bot.
+
+### OBS audio setup
+
+Browser audio and Streamer.bot audio use separate output paths.
+Hearing the arrival sound does not confirm that browser effects are audible.
+
+To control and hear the overlay through OBS:
+
+1. Open the properties of the `RaidBeacon Fleet` browser source.
+2. Enable **Control audio via OBS**.
+3. Ensure the source is unmuted in the OBS Audio Mixer and its volume
+   fader is not at minimum.
+4. Open **Advanced Audio Properties**.
+5. Set `RaidBeacon Fleet` to **Monitor and Output**.
+6. Under **Settings → Audio → Advanced → Monitoring Device**, select
+   the headphones or speakers used to listen.
+7. Run the fleet check and watch the source's audio meter.
+
+Monitoring sends audio to the selected listening device. Output sends
+audio into the OBS output mix, subject to the configured audio tracks.
+
+Verify the recording separately with a short local recording. Hearing
+audio through monitoring does not prove it is included on the recorded
+or streamed track. Listen for doubled audio too if Desktop Audio also
+captures the monitoring device.
+
+### Troubleshooting history: the missing-sound detour
+
+**Symptom**
+
+Only one cannon sound was audible at the start of the alert.
+The repeated cannon and splash effects could not be heard locally.
+
+**Initial investigation**
+
+We investigated C# URL parameters, JavaScript playback calls, asset paths,
+script order, and browser audio loading. Temporary on-screen diagnostics
+were added, and audio settings were isolated for testing.
+
+The diagnostics showed:
+
+- Effect audio was enabled.
+- Both audio pools had loaded successfully.
+- Cannon and splash playback had started.
+- Neither effect had been disabled by an audio error.
+
+**Cause and solution**
+
+The missing local sound was resolved by enabling OBS monitoring for the
+overlay audio. The working browser playback was not reaching the
+streamer's listening output.
+
+The single audible cannon was the arrival sound played separately by
+Streamer.bot. This initially made the problem look like partial failure
+of the animation audio.
+
+**What we learned**
+
+The code investigation was an unnecessary detour for this particular
+issue. No change to the animation's sound-trigger logic was needed to
+restore local audibility.
+
+For similar reports, first distinguish:
+
+1. Is the browser requesting playback?
+2. Does the OBS source meter show audio?
+3. Is monitoring enabled and routed to the correct device?
+4. Is audio present in the recording or stream output?
+
+Only change playback code when the evidence points to a code problem.
+
+**Cleanup**
+
+The temporary diagnostic panel and debug counters were removed.
+Normal error handling and startup/completion logging remain.
+
+### Verification status
+
+- [x] Browser diagnostics confirmed loaded audio and successful playback starts.
+- [x] Local audibility was resolved through OBS audio monitoring.
+- [x] Clean files without the diagnostic panel were confirmed working.
+- [ ] Cannon and splash effects verified in a local OBS recording.
+- [ ] Larger fleet audio limits checked.
+- [ ] Missing audio file checked without preventing fleet completion.
+- [ ] Two queued alerts checked with synchronized effects enabled.
+
+Live Twitch shoutout verification remains pending.
+
 ## Your visual checks
 
 1. Test 1 viewer: five ships, each fires once from each side; ten visible impacts in total.
