@@ -42,3 +42,15 @@ A sent Twitch message cannot be undone by an overlay failure.
 - [ ] Incoming raid arguments verified.
 - [ ] Live chat message received.
 - [ ] Live native shoutout verified.
+
+### Argument-based preview — 2026-10-08
+
+- [x] Runs with TestMode=false and PreviewOnly=true.
+- [x] Reads userName, user, and viewers from supplied arguments.
+- [x] Formats ExampleRaider and 12 raiders correctly.
+- [x] Previews chat and native shoutout without sending either.
+- [x] Receives matching overlay start and completion signals.
+- [x] Completes playback without reported errors.
+
+This check used manually supplied arguments. An actual incoming
+Twitch raid and live chat/shoutout delivery remain unverified.

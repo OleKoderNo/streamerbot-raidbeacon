@@ -10,7 +10,7 @@ public class CPHInline
     // TestMode uses sample data and ALWAYS prevents Twitch posting.
     // PreviewOnly prevents Twitch posting when using real event data.
     // Both modes still run the OBS overlay and audio.
-    private const bool TestMode = true;
+    private const bool TestMode = false;
     private const bool PreviewOnly = true;
 
     private const string TestLogin = "exampleraider";
